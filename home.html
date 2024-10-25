@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Telematics Chatbot</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      margin: 0; 
+      background-color: #f5f5f5; 
+    }
+    #container { 
+      width: 50%; /* Adjusted width */
+      max-width: 400px; /* Maximum width of 400px */
+      height: 70vh; /* Adjusted height */
+      border: 1px solid #ccc; 
+      padding: 20px; 
+      border-radius: 8px; 
+      background-color: white; 
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+      display: flex;
+      flex-direction: column;
+    }
+    #intro { 
+      text-align: center; 
+    }
+    #searchArea { 
+      display: flex; 
+      margin-bottom: 20px; /* Space below search bar */
+    }
+    #userInput { 
+      flex-grow: 1; 
+      padding: 10px; 
+    }
+    #sendBtn { 
+      padding: 10px; 
+      background-color: #007BFF; 
+      color: white; 
+      border: none; 
+      cursor: pointer; 
+      margin-left: 10px; /* Space between input and button */
+    }
+    #chatbox { 
+      margin-top: 20px; 
+      display: none; 
+      flex-grow: 1; /* Allow chatbox to expand */
+      overflow-y: auto; /* Allows scrolling if content overflows */
+    }
+    .message { 
+      padding: 10px 15px; 
+      margin: 5px 0; 
+      border-radius: 5px; 
+      display: inline-block; 
+      width: auto; 
+      max-width: 80%; /* Adjusts width dynamically */
+    }
+    .user { 
+      background-color: #007BFF; 
+      color: white; 
+      border-radius: 15px 15px 0 15px; 
+      float: right; 
+      clear: both; 
+    }
+    .bot { 
+      background-color: #f1f1f1; 
+      color: black; 
+      border-radius: 15px 15px 15px 0; 
+      float: left; 
+      clear: both; 
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="intro">
+      <h2>Hi there, let's chat!</h2>
+      <p>What are you searching for today?</p>
+    </div>
+
+    <div id="searchArea">
+      <input type="text" id="userInput" placeholder="Type your question here..." onkeypress="handleKeyPress(event)">
+      <button id="sendBtn" onclick="sendMessage()">Send</button>
+    </div>
+
+    <div id="chatbox"></div>
+  </div>
+
+  <script>
+    async function sendMessage() {
+      const userInput = document.getElementById("userInput").value.trim();
+      if (!userInput) return;
+
+      addMessage(userInput, 'user');
+      document.getElementById("userInput").value = '';
+
+      // Show chatbox if it was previously hidden
+      document.getElementById("chatbox").style.display = "block";
+
+      // Wait for a brief moment before getting the bot response
+      setTimeout(async () => {
+        try {
+          console.log("Sending request to server..."); // Debug log
+          const response = await fetch("http://<your_ngrok_subdomain>.ngrok.io/query", { // Replace with your ngrok URL
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: userInput })
+          });
+          if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+          }
+          const data = await response.json();
+          addMessage(data.relevant_text, 'bot');
+        } catch (error) {
+          addMessage("Error connecting to the server.", 'bot');
+          console.error('Fetch error:', error); // Log the error for debugging
+        }
+      }, 500); // Delay for 500 ms before showing bot response
+    }
+
+    function addMessage(text, sender) {
+      const chatbox = document.getElementById("chatbox");
+      const messageElem = document.createElement("div");
+      messageElem.className = `message ${sender}`;
+      messageElem.innerText = text;
+      chatbox.appendChild(messageElem);
+      chatbox.scrollTop = chatbox.scrollHeight; // Scroll to the bottom
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+  </script>
+</body>
+</html>
